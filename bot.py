@@ -1,4 +1,3 @@
-import os
 import logging
 import datetime
 import asyncio
@@ -7,9 +6,9 @@ from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTyp
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # ======= CONFIG LANGSUNG =======
-TOKEN = 8246154695:AAFFJRh3l_94cHqjyLzV9ncyld7OM76qoyU"          # Ganti dengan token bot kamu
-GROUP_ID = -1003056662193                          # Ganti dengan ID grup
-CHANNEL_ID = -1002782196938                     # Ganti dengan ID channel
+TOKEN = "8246154695:AAFFJRh3l_94cHqjyLzV9ncyld7OM76qoyU"  # Ganti dengan token bot kamu
+GROUP_ID = -1003056662193                                      # Ganti dengan ID grup
+CHANNEL_ID = -1002782196938                                 # Ganti dengan ID channel
 
 # ======= LOGGING =======
 logging.basicConfig(
