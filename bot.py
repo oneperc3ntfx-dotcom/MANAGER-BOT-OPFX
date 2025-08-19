@@ -6,9 +6,9 @@ from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTyp
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # =================== CONFIG ===================
-TOKEN = "8246154695:AAFFJRh3l_94cHqjyLzV9ncyld7OM76qoyU"
-GROUP_ID = -1003056662193
-CHANNEL_ID = -1002782196938
+TOKEN = "8246154695:AAFFJRh3l_94cHqjyLzV9ncyld7OM76qoyU"  # Ganti dengan token bot kamu
+GROUP_ID = -1003056662193                                    # Ganti dengan ID grup private
+CHANNEL_ID = -1002782196938                                   # Ganti dengan ID channel umum
 
 # =================== LOGGING ===================
 logging.basicConfig(
@@ -25,7 +25,7 @@ async def forward_testi(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = msg.text or msg.caption or ""
     if "#profit" not in text:
-        return
+        return  # Hanya lanjutkan jika ada #profit
 
     if msg.text:
         await context.bot.send_message(CHANNEL_ID, msg.text)
@@ -72,9 +72,10 @@ async def main():
     logger.info("Scheduler started")
 
     # Jalankan bot polling
+    await app.initialize()   # Initialize aplikasi
     await app.start()
     await app.updater.start_polling()
-    await app.updater.idle()  # Bot tetap jalan sampai dihentikan
+    await app.updater.idle()  # Menjaga bot tetap berjalan
 
 # =================== RUN SCRIPT ===================
 if __name__ == "__main__":
@@ -83,4 +84,4 @@ if __name__ == "__main__":
         loop.create_task(main())
         loop.run_forever()
     except KeyboardInterrupt:
-        pass
+        logger.info("Bot stopped by user")
