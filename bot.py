@@ -71,11 +71,16 @@ async def main():
     scheduler.start()
     logger.info("Scheduler started")
 
-    # Jalankan bot
-    await app.run_polling()
+    # Jalankan bot polling
+    await app.start()
+    await app.updater.start_polling()
+    await app.updater.idle()  # Bot tetap jalan sampai dihentikan
 
 # =================== RUN SCRIPT ===================
 if __name__ == "__main__":
-    # Jalankan main() tanpa nest_asyncio atau asyncio.run()
-    import asyncio
-    asyncio.run(main())
+    try:
+        loop = asyncio.get_event_loop()
+        loop.create_task(main())
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
