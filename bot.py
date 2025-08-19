@@ -1,15 +1,14 @@
 import logging
 import datetime
 import asyncio
-import nest_asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # =================== CONFIG ===================
-TOKEN = "8246154695:AAFFJRh3l_94cHqjyLzV9ncyld7OM76qoyU"  # Ganti dengan token bot kamu
-GROUP_ID = -1003056662193                                    # Ganti dengan ID grup private
-CHANNEL_ID = -1002782196938                                   # Ganti dengan ID channel umum
+TOKEN = "8246154695:AAFFJRh3l_94cHqjyLzV9ncyld7OM76qoyU"
+GROUP_ID = -1003056662193
+CHANNEL_ID = -1002782196938
 
 # =================== LOGGING ===================
 logging.basicConfig(
@@ -17,9 +16,6 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-
-# =================== NEST ASYNCIO ===================
-nest_asyncio.apply()  # Mengizinkan nested event loop, mencegah RuntimeError
 
 # =================== FORWARD PESAN ===================
 async def forward_testi(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -29,25 +25,18 @@ async def forward_testi(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = msg.text or msg.caption or ""
     if "#profit" not in text:
-        return  # Hanya lanjutkan jika ada #profit
+        return
 
-    # Forward berdasarkan tipe pesan
     if msg.text:
         await context.bot.send_message(CHANNEL_ID, msg.text)
     elif msg.sticker:
         await context.bot.send_sticker(CHANNEL_ID, msg.sticker.file_id)
     elif msg.photo:
-        await context.bot.send_photo(
-            CHANNEL_ID, msg.photo[-1].file_id, caption=msg.caption or ""
-        )
+        await context.bot.send_photo(CHANNEL_ID, msg.photo[-1].file_id, caption=msg.caption or "")
     elif msg.video:
-        await context.bot.send_video(
-            CHANNEL_ID, msg.video.file_id, caption=msg.caption or ""
-        )
+        await context.bot.send_video(CHANNEL_ID, msg.video.file_id, caption=msg.caption or "")
     elif msg.document:
-        await context.bot.send_document(
-            CHANNEL_ID, msg.document.file_id, caption=msg.caption or ""
-        )
+        await context.bot.send_document(CHANNEL_ID, msg.document.file_id, caption=msg.caption or "")
 
 # =================== GREETINGS ===================
 async def send_greeting(app):
@@ -82,10 +71,11 @@ async def main():
     scheduler.start()
     logger.info("Scheduler started")
 
-    # Jalankan bot v20+
+    # Jalankan bot
     await app.run_polling()
 
+# =================== RUN SCRIPT ===================
 if __name__ == "__main__":
-    # Jangan pakai asyncio.run langsung, gunakan loop yang sudah ada
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    # Jalankan main() tanpa nest_asyncio atau asyncio.run()
+    import asyncio
+    asyncio.run(main())
