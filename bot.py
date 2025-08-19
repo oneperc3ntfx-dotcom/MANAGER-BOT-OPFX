@@ -1,6 +1,7 @@
 import logging
 import datetime
 import asyncio
+import nest_asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -16,6 +17,9 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+# =================== NEST ASYNCIO ===================
+nest_asyncio.apply()  # Mengizinkan nested event loop, mencegah RuntimeError
 
 # =================== FORWARD PESAN ===================
 async def forward_testi(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -78,8 +82,10 @@ async def main():
     scheduler.start()
     logger.info("Scheduler started")
 
-    # Jalankan bot (v20+ style)
+    # Jalankan bot v20+
     await app.run_polling()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # Jangan pakai asyncio.run langsung, gunakan loop yang sudah ada
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
