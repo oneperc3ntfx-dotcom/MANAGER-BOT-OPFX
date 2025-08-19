@@ -1,2 +1,2 @@
-pip install python-telegram-bot==22.3
-pip install apscheduler==3.10.0
+python-telegram-bot==22.3
+APScheduler==3.10.0
