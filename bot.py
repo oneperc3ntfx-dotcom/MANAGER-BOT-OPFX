@@ -5,10 +5,10 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-# ======= CONFIG =======
-TOKEN = "8246154695:AAFFJRh3l_94cHqjyLzV9ncyld7OM76qoyU"
-GROUP_ID = -1003056662193      # ID grup private
-CHANNEL_ID = -1002782196938    # ID channel umum
+# ======= CONFIG LANGSUNG =======
+TOKEN = "8246154695:AAFFJRh3l_94cHqjyLzV9ncyld7OM76qoyU"  # Ganti dengan token bot kamu
+GROUP_ID = -1003056662193                                    # Ganti dengan ID grup private
+CHANNEL_ID = -1002782196938                                   # Ganti dengan ID channel umum
 
 # ======= LOGGING =======
 logging.basicConfig(
@@ -20,36 +20,45 @@ logger = logging.getLogger(__name__)
 # ======= MESSAGE FORWARDING =======
 async def forward_testi(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
+
     if not msg:
         return
 
-    # Ambil teks/caption untuk filter #profit
-    text_to_check = msg.text or msg.caption or ""
+    text = msg.text or msg.caption or ""
+    if "#profit" not in text:
+        return  # hanya teruskan pesan dengan #profit
 
-    # Filter: lanjutkan hanya jika mengandung "#profit"
-    if "#profit" not in text_to_check:
-        return
-
-    try:
-        if msg.text:
-            await context.bot.send_message(CHANNEL_ID, msg.text)
-        elif msg.sticker:
-            await context.bot.send_sticker(CHANNEL_ID, msg.sticker.file_id)
-        elif msg.photo:
-            photo_file = msg.photo[-1].file_id
-            caption = msg.caption or ""
-            await context.bot.send_photo(CHANNEL_ID, photo_file, caption=caption)
-        elif msg.video:
-            video_file = msg.video.file_id
-            caption = msg.caption or ""
-            await context.bot.send_video(CHANNEL_ID, video_file, caption=caption)
-        elif msg.document:
-            doc_file = msg.document.file_id
-            caption = msg.caption or ""
-            await context.bot.send_document(CHANNEL_ID, doc_file, caption=caption)
-        logger.info(f"Forwarded message to channel: {text_to_check[:50]}...")
-    except Exception as e:
-        logger.error(f"Failed to forward message: {e}")
+    if msg.text:
+        await context.bot.send_message(
+            CHANNEL_ID,
+            f"{msg.text}"
+        )
+    elif msg.sticker:
+        await context.bot.send_sticker(CHANNEL_ID, msg.sticker.file_id)
+    elif msg.photo:
+        photo_file = msg.photo[-1].file_id
+        caption = msg.caption or ""
+        await context.bot.send_photo(
+            CHANNEL_ID,
+            photo_file,
+            caption=caption
+        )
+    elif msg.video:
+        video_file = msg.video.file_id
+        caption = msg.caption or ""
+        await context.bot.send_video(
+            CHANNEL_ID,
+            video_file,
+            caption=caption
+        )
+    elif msg.document:
+        doc_file = msg.document.file_id
+        caption = msg.caption or ""
+        await context.bot.send_document(
+            CHANNEL_ID,
+            doc_file,
+            caption=caption
+        )
 
 # ======= GREETINGS =======
 async def send_greeting(app):
@@ -65,17 +74,13 @@ async def send_greeting(app):
     else:
         return
 
-    try:
-        await app.bot.send_message(GROUP_ID, text)
-        await app.bot.send_message(CHANNEL_ID, text)
-        logger.info(f"Greeting sent at hour {hour}")
-    except Exception as e:
-        logger.error(f"Failed to send greeting: {e}")
+    await app.bot.send_message(GROUP_ID, text)
+    await app.bot.send_message(CHANNEL_ID, text)
 
 # ======= MAIN =======
 async def main():
     app = ApplicationBuilder().token(TOKEN).build()
-    
+
     # Handler untuk forward pesan dari grup private
     app.add_handler(MessageHandler(filters.Chat(GROUP_ID), forward_testi))
 
@@ -88,7 +93,13 @@ async def main():
     logger.info("Scheduler started")
 
     # Jalankan bot
-    await app.run_polling()
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling()
+    await app.updater.idle()
 
+# ======= START BOT =======
 if __name__ == "__main__":
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.create_task(main())
+    loop.run_forever()
