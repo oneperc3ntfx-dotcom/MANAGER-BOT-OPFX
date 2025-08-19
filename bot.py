@@ -5,37 +5,53 @@ import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from dotenv import load_dotenv
 
-# ======= LOAD ENV =======
-load_dotenv()
-TOKEN = os.getenv("BOT_TOKEN")
-GROUP_ID = int(os.getenv("GROUP_ID"))
-CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
+# ======= CONFIG LANGSUNG =======
+TOKEN = 8246154695:AAFFJRh3l_94cHqjyLzV9ncyld7OM76qoyU"          # Ganti dengan token bot kamu
+GROUP_ID = -1003056662193                          # Ganti dengan ID grup
+CHANNEL_ID = -1002782196938                     # Ganti dengan ID channel
 
 # ======= LOGGING =======
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
 # ======= MESSAGE FORWARDING =======
 async def forward_testi(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
 
     if msg.text:
-        await context.bot.send_message(CHANNEL_ID, f"{msg.text}\n\n#profit")
+        await context.bot.send_message(
+            CHANNEL_ID, 
+            f"{msg.text}\n\n#profit"
+        )
     elif msg.sticker:
         await context.bot.send_sticker(CHANNEL_ID, msg.sticker.file_id)
     elif msg.photo:
         photo_file = msg.photo[-1].file_id
         caption = msg.caption or ""
-        await context.bot.send_photo(CHANNEL_ID, photo_file, caption=f"{caption}\n\n#profit" if caption else "#profit")
+        await context.bot.send_photo(
+            CHANNEL_ID, 
+            photo_file, 
+            caption=f"{caption}\n\n#profit" if caption else "#profit"
+        )
     elif msg.video:
         video_file = msg.video.file_id
         caption = msg.caption or ""
-        await context.bot.send_video(CHANNEL_ID, video_file, caption=f"{caption}\n\n#profit" if caption else "#profit")
+        await context.bot.send_video(
+            CHANNEL_ID, 
+            video_file, 
+            caption=f"{caption}\n\n#profit" if caption else "#profit"
+        )
     elif msg.document:
         doc_file = msg.document.file_id
         caption = msg.caption or ""
-        await context.bot.send_document(CHANNEL_ID, doc_file, caption=f"{caption}\n\n#profit" if caption else "#profit")
+        await context.bot.send_document(
+            CHANNEL_ID, 
+            doc_file, 
+            caption=f"{caption}\n\n#profit" if caption else "#profit"
+        )
 
 # ======= GREETINGS =======
 async def send_greeting(app):
@@ -63,9 +79,18 @@ async def main():
 
     # Scheduler greetings
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(lambda: asyncio.create_task(send_greeting(app)), 'cron', hour=7, minute=0)
-    scheduler.add_job(lambda: asyncio.create_task(send_greeting(app)), 'cron', hour=12, minute=0)
-    scheduler.add_job(lambda: asyncio.create_task(send_greeting(app)), 'cron', hour=0, minute=0)
+    scheduler.add_job(
+        lambda: asyncio.create_task(send_greeting(app)),
+        'cron', hour=7, minute=0
+    )
+    scheduler.add_job(
+        lambda: asyncio.create_task(send_greeting(app)),
+        'cron', hour=12, minute=0
+    )
+    scheduler.add_job(
+        lambda: asyncio.create_task(send_greeting(app)),
+        'cron', hour=0, minute=0
+    )
     scheduler.start()
 
     await app.run_polling()
