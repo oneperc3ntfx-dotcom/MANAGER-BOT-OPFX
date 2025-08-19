@@ -1,103 +1,74 @@
-from telegram import Update
-from telegram.ext import Updater, MessageHandler, Filters, CallbackContext, CallbackContext, CommandHandler
-from apscheduler.schedulers.background import BackgroundScheduler
+import os
 import logging
 import datetime
+import asyncio
+from telegram import Update
+from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from dotenv import load_dotenv
 
-# ======= CONFIG =======
-TOKEN = "8246154695:AAFFJRh3l_94cHqjyLzV9ncyld7OM76qoyU"
-GROUP_ID = -1003056662193
-CHANNEL_ID = "-1002782196938"  
-# =====================
+# ======= LOAD ENV =======
+load_dotenv()
+TOKEN = os.getenv("BOT_TOKEN")
+GROUP_ID = int(os.getenv("GROUP_ID"))
+CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 
+# ======= LOGGING =======
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-# ======= MESSAGE FORWARDING FUNCTION =======
-def forward_testi(update: Update, context: CallbackContext):
+# ======= MESSAGE FORWARDING =======
+async def forward_testi(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
 
-    # TEKS
     if msg.text:
-        context.bot.send_message(
-            chat_id=CHANNEL_ID,
-            text=f"{msg.text}\n\n#profit"
-        )
-    
-    # STIKER
+        await context.bot.send_message(CHANNEL_ID, f"{msg.text}\n\n#profit")
     elif msg.sticker:
-        context.bot.send_sticker(
-            chat_id=CHANNEL_ID,
-            sticker=msg.sticker.file_id
-        )
-    
-    # FOTO
+        await context.bot.send_sticker(CHANNEL_ID, msg.sticker.file_id)
     elif msg.photo:
         photo_file = msg.photo[-1].file_id
-        caption = msg.caption if msg.caption else ""
-        context.bot.send_photo(
-            chat_id=CHANNEL_ID,
-            photo=photo_file,
-            caption=f"{caption}\n\n#profit" if caption else "#profit"
-        )
-    
-    # VIDEO
+        caption = msg.caption or ""
+        await context.bot.send_photo(CHANNEL_ID, photo_file, caption=f"{caption}\n\n#profit" if caption else "#profit")
     elif msg.video:
         video_file = msg.video.file_id
-        caption = msg.caption if msg.caption else ""
-        context.bot.send_video(
-            chat_id=CHANNEL_ID,
-            video=video_file,
-            caption=f"{caption}\n\n#profit" if caption else "#profit"
-        )
-    
-    # DOKUMEN
+        caption = msg.caption or ""
+        await context.bot.send_video(CHANNEL_ID, video_file, caption=f"{caption}\n\n#profit" if caption else "#profit")
     elif msg.document:
         doc_file = msg.document.file_id
-        caption = msg.caption if msg.caption else ""
-        context.bot.send_document(
-            chat_id=CHANNEL_ID,
-            document=doc_file,
-            caption=f"{caption}\n\n#profit" if caption else "#profit"
-        )
+        caption = msg.caption or ""
+        await context.bot.send_document(CHANNEL_ID, doc_file, caption=f"{caption}\n\n#profit" if caption else "#profit")
 
-# ======= SCHEDULED GREETINGS =======
-def send_greeting(context: CallbackContext):
+# ======= GREETINGS =======
+async def send_greeting(app):
     now = datetime.datetime.now()
     hour = now.hour
 
-    # Pesan sesuai waktu
-    if hour == 7:  # Selamat pagi
+    if hour == 7:
         text = "Selamat pagi trader! Semoga hari ini penuh profit 😊"
-    elif hour == 12:  # Selamat siang
+    elif hour == 12:
         text = "Selamat siang, jangan lupa makan siang para trader, biar ada tenaga untuk melawan market 💪"
-    elif hour == 0:  # Selamat malam
+    elif hour == 0:
         text = "Waktunya istirahat, semoga mimpi indah dan profit hari ini 🌙"
     else:
-        return  # Skip jika bukan waktu yang diinginkan
+        return
 
-    # Kirim ke grup private dan channel publik
-    context.bot.send_message(chat_id=GROUP_ID, text=text)
-    context.bot.send_message(chat_id=CHANNEL_ID, text=text)
+    await app.bot.send_message(GROUP_ID, text)
+    await app.bot.send_message(CHANNEL_ID, text)
 
 # ======= MAIN =======
-def main():
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
+async def main():
+    app = ApplicationBuilder().token(TOKEN).build()
+    
+    # Handler untuk forward semua pesan dari grup
+    app.add_handler(MessageHandler(filters.Chat(GROUP_ID), forward_testi))
 
-    # Forwarding handler untuk semua pesan dari grup
-    dp.add_handler(MessageHandler(Filters.chat(chat_id=GROUP_ID), forward_testi))
-
-    # Scheduler untuk greetings
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(lambda: send_greeting(updater.bot), 'cron', hour=7, minute=0)
-    scheduler.add_job(lambda: send_greeting(updater.bot), 'cron', hour=12, minute=0)
-    scheduler.add_job(lambda: send_greeting(updater.bot), 'cron', hour=0, minute=0)
+    # Scheduler greetings
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(lambda: asyncio.create_task(send_greeting(app)), 'cron', hour=7, minute=0)
+    scheduler.add_job(lambda: asyncio.create_task(send_greeting(app)), 'cron', hour=12, minute=0)
+    scheduler.add_job(lambda: asyncio.create_task(send_greeting(app)), 'cron', hour=0, minute=0)
     scheduler.start()
 
-    # Start bot
-    updater.start_polling()
-    logging.info("Bot started...")
-    updater.idle()
+    await app.run_polling()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
