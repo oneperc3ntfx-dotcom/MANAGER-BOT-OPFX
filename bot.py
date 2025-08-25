@@ -1,14 +1,15 @@
 import logging
 import datetime
 import asyncio
+import pytz
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # =================== CONFIG ===================
 TOKEN = "8246154695:AAFFJRh3l_94cHqjyLzV9ncyld7OM76qoyU"  # Ganti dengan token bot kamu
-GROUP_ID = -1003056662193                                    # Ganti dengan ID grup private
-CHANNEL_ID = -1002782196938                                   # Ganti dengan ID channel umum
+GROUP_ID = -1003056662193                                  # ID grup private
+CHANNEL_ID = -1002782196938                                # ID channel umum
 
 # =================== LOGGING ===================
 logging.basicConfig(
@@ -64,8 +65,9 @@ async def forward_testi(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # =================== GREETINGS ===================
 async def send_greeting(app, time_of_day):
     """time_of_day: 'pagi' | 'siang' | 'malam' """
-    now = datetime.datetime.now()
-    day_name = now.strftime("%A")  # Nama hari English (Monday, Tuesday, dst)
+    wib = pytz.timezone("Asia/Jakarta")
+    now = datetime.datetime.now(wib)
+    day_name = now.strftime("%A")
     day_map = {
         "Monday": "Senin",
         "Tuesday": "Selasa",
@@ -124,11 +126,11 @@ async def main():
     # Handler untuk forward pesan dari grup private
     app.add_handler(MessageHandler(filters.Chat(GROUP_ID), forward_testi))
 
-    # Scheduler greetings
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(send_greeting, "cron", hour=7, minute=0, args=[app, "pagi"])
-    scheduler.add_job(send_greeting, "cron", hour=12, minute=0, args=[app, "siang"])
-    scheduler.add_job(send_greeting, "cron", hour=0, minute=0, args=[app, "malam"])
+    # Scheduler greetings (WIB)
+    scheduler = AsyncIOScheduler(timezone="Asia/Jakarta")
+    scheduler.add_job(send_greeting, "cron", hour=7, minute=0, args=[app, "pagi"])   # 07:00 WIB
+    scheduler.add_job(send_greeting, "cron", hour=12, minute=0, args=[app, "siang"]) # 12:00 WIB
+    scheduler.add_job(send_greeting, "cron", hour=21, minute=0, args=[app, "malam"]) # 21:00 WIB
     scheduler.start()
     logger.info("Scheduler started")
 
