@@ -12,7 +12,7 @@ CHANNEL_ID = -1002782196938                                   # Ganti dengan ID 
 
 # =================== LOGGING ===================
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
@@ -25,36 +25,97 @@ async def forward_testi(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = msg.text or msg.caption or ""
     if "#profit" not in text:
-        return  # Hanya lanjutkan jika ada #profit
+        return  # Hanya teruskan jika ada #profit
+
+    # Ambil nama & username pengirim
+    if msg.from_user:
+        name = msg.from_user.full_name
+        username = f" (@{msg.from_user.username})" if msg.from_user.username else ""
+        sender = f"{name}{username}"
+    else:
+        sender = "Anonim"
 
     if msg.text:
-        await context.bot.send_message(CHANNEL_ID, msg.text)
+        await context.bot.send_message(CHANNEL_ID, f"Dari {sender}:\n{text}")
     elif msg.sticker:
+        await context.bot.send_message(CHANNEL_ID, f"Dari {sender}:")
         await context.bot.send_sticker(CHANNEL_ID, msg.sticker.file_id)
     elif msg.photo:
-        await context.bot.send_photo(CHANNEL_ID, msg.photo[-1].file_id, caption=msg.caption or "")
+        await context.bot.send_photo(
+            CHANNEL_ID,
+            msg.photo[-1].file_id,
+            caption=f"Dari {sender}:\n{msg.caption or ''}"
+        )
     elif msg.video:
-        await context.bot.send_video(CHANNEL_ID, msg.video.file_id, caption=msg.caption or "")
+        await context.bot.send_video(
+            CHANNEL_ID,
+            msg.video.file_id,
+            caption=f"Dari {sender}:\n{msg.caption or ''}"
+        )
     elif msg.document:
-        await context.bot.send_document(CHANNEL_ID, msg.document.file_id, caption=msg.caption or "")
+        await context.bot.send_document(
+            CHANNEL_ID,
+            msg.document.file_id,
+            caption=f"Dari {sender}:\n{msg.caption or ''}"
+        )
+
+    logger.info(f"Pesan #profit diteruskan dari {sender}")
 
 # =================== GREETINGS ===================
-async def send_greeting(app):
+async def send_greeting(app, time_of_day):
+    """time_of_day: 'pagi' | 'siang' | 'malam' """
     now = datetime.datetime.now()
-    hour = now.hour
+    day_name = now.strftime("%A")  # Nama hari English (Monday, Tuesday, dst)
+    day_map = {
+        "Monday": "Senin",
+        "Tuesday": "Selasa",
+        "Wednesday": "Rabu",
+        "Thursday": "Kamis",
+        "Friday": "Jumat",
+        "Saturday": "Sabtu",
+        "Sunday": "Minggu",
+    }
+    hari = day_map.get(day_name, day_name)
+
     text = ""
 
-    if hour == 7:
-        text = "Selamat pagi trader! Semoga hari ini penuh profit 😊"
-    elif hour == 12:
-        text = "Selamat siang, jangan lupa makan siang para trader 💪"
-    elif hour == 0:
-        text = "Waktunya istirahat, semoga mimpi indah dan profit hari ini 🌙"
-    else:
-        return
+    # =================== Senin - Jumat (XAUUSD mode) ===================
+    if hari in ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"]:
+        if time_of_day == "pagi":
+            text = f"Selamat pagi Traders dan selamat hari {hari}, mari kita berburu Dollar di XAUUSD ✨"
+        elif time_of_day == "siang":
+            text = "Selamat siang traders, jangan lupa makan siang terlebih dahulu agar ada tenaga untuk menganalisa chart XAUUSD 💪"
+        elif time_of_day == "malam":
+            if hari == "Jumat":
+                text = ("Selamat malam trader, sudah waktunya istirahat. "
+                        "Malam ini hari terakhir kita untuk menambang emas, kita akan lanjutkan Senin pagi lagi. "
+                        "Tetapi jika ada yang hobi menambang BITCOIN boleh bangun besok pagi ya hehe 🚀")
+            else:
+                text = "Selamat malam trader, sudah waktunya istirahat. Jangan terlalu berlebihan untuk trading, mari kita lanjutkan besok lagi 🌙"
 
-    await app.bot.send_message(GROUP_ID, text)
-    await app.bot.send_message(CHANNEL_ID, text)
+    # =================== Sabtu - Minggu (Bitcoin mode) ===================
+    else:
+        if time_of_day == "pagi":
+            text = f"Selamat pagi Traders, selamat hari {hari}, saatnya kita berburu Dollar di Bitcoin 🚀"
+        elif time_of_day == "siang":
+            text = "Selamat siang traders, jangan lupa makan siang. Kita lanjut analisa chart Bitcoin sore ini 💪"
+        elif time_of_day == "malam":
+            text = "Selamat malam trader, sudah waktunya istirahat. Jangan terlalu berlebihan untuk trading Bitcoin, lanjut besok lagi 🌙"
+
+    # Kirim ke Grup & Channel
+    if text:
+        await app.bot.send_message(GROUP_ID, text)
+        await app.bot.send_message(CHANNEL_ID, text)
+        logger.info(f"Pesan greeting '{time_of_day}' dikirim ({hari})")
+
+    # Tambahan promo khusus malam → hanya ke channel
+    if time_of_day == "malam":
+        promo = (
+            "Untuk Bergabung Ke GRUP SIGNAL AI & GRUP NEWS AI , DAN IKUTAN PROFIT SEPERTI TEMAN TEMAN YANG LAIN.\n"
+            "KALIAN BISA CHAT ADMIN TELEGRAM YA  GRATISS ✅"
+        )
+        await app.bot.send_message(CHANNEL_ID, promo)
+        logger.info("Promo malam dikirim ke channel")
 
 # =================== MAIN ===================
 async def main():
@@ -65,17 +126,17 @@ async def main():
 
     # Scheduler greetings
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(lambda: asyncio.create_task(send_greeting(app)), 'cron', hour=7, minute=0)
-    scheduler.add_job(lambda: asyncio.create_task(send_greeting(app)), 'cron', hour=12, minute=0)
-    scheduler.add_job(lambda: asyncio.create_task(send_greeting(app)), 'cron', hour=0, minute=0)
+    scheduler.add_job(send_greeting, "cron", hour=7, minute=0, args=[app, "pagi"])
+    scheduler.add_job(send_greeting, "cron", hour=12, minute=0, args=[app, "siang"])
+    scheduler.add_job(send_greeting, "cron", hour=0, minute=0, args=[app, "malam"])
     scheduler.start()
     logger.info("Scheduler started")
 
     # Jalankan bot polling
-    await app.initialize()   # Initialize aplikasi
+    await app.initialize()
     await app.start()
     await app.updater.start_polling()
-    await app.updater.idle()  # Menjaga bot tetap berjalan
+    await app.updater.idle()
 
 # =================== RUN SCRIPT ===================
 if __name__ == "__main__":
